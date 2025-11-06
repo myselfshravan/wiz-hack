@@ -250,6 +250,95 @@ python music_visualizer.py --file party.mp3 --loop
 - multi-light mode looks absolutely insane on camera
 - record the video, then overlay the terminal output for that hacker vibe
 
+---
+
+## 🎬 video visualizer (NEXT LEVEL INSANITY!)
+
+okay so audio was cool, but what if your lights sync to VIDEOS? like actual movie scenes, game footage, anything.
+
+**DIY Ambilight but better** - Philips charges $$$$ for this. you just reverse-engineered it.
+
+**basic usage:**
+
+```bash
+python video_visualizer.py --file movie.mp4
+```
+
+your lights will now match the colors on screen. dark scene = dim lights. explosion = bright orange/red. underwater scene = blue. it's INSANE.
+
+**different modes:**
+
+```bash
+# dominant color mode (default) - extracts main color from entire frame
+python video_visualizer.py --file video.mp4 --mode dominant_color
+
+# edge analysis mode (TRUE Ambilight style) - uses colors from frame edges
+# this is what Philips TVs do, looks sick for movies
+python video_visualizer.py --file video.mp4 --mode edge_analysis
+
+# average color mode - simple average of all pixels
+python video_visualizer.py --file video.mp4 --mode average
+
+# hybrid mode - colors from video + brightness from audio track
+# the ULTIMATE experience - visual colors + audio-reactive brightness
+python video_visualizer.py --file movie.mp4 --mode hybrid --audio-brightness
+```
+
+**control the effect:**
+
+```bash
+# adjust edge thickness for edge_analysis mode (0.0-0.5)
+python video_visualizer.py --file video.mp4 --mode edge_analysis --edge-thickness 0.2
+
+# color smoothing - prevent jarring color jumps
+python video_visualizer.py --file video.mp4 --color-smoothing 0.7
+
+# brightness range control
+python video_visualizer.py --file video.mp4 --min-brightness 20 --max-brightness 80
+
+# run lights-only mode (no video window, great for projectors)
+python video_visualizer.py --file video.mp4 --no-display
+```
+
+**how it works:**
+
+1. reads video file frame by frame using OpenCV
+2. analyzes each frame for color content (K-means clustering for dominant color, or edge extraction for Ambilight)
+3. sends RGB values to lights via UDP
+4. syncs to video framerate for perfect timing
+5. optional: extracts audio track with ffmpeg and uses it for brightness control
+6. displays video with color preview and stats overlay
+
+**epic use cases:**
+
+- **movie nights** - your living room becomes part of the movie (explosions, sunsets, underwater scenes all sync)
+- **gaming** - lights react to game footage (record gameplay, play it back with light sync)
+- **music videos** - combine visual + audio sync for full sensory experience
+- **presentations** - lights match your slides (record screen, play with lights)
+- **horror movies** - dark scenes = dim lights, jump scares = bright flash (terrifying)
+
+**pro tips:**
+
+- `edge_analysis` mode works best for movies/TV shows (mimics real Ambilight)
+- `dominant_color` mode is great for animated content (vibrant scenes)
+- use `--audio-brightness` with music videos for double sync (colors + beats)
+- `--color-smoothing 0.7` prevents seizure-inducing color flashes
+- film this setup and watch the LinkedIn engagement go CRAZY
+
+**requirements:**
+
+```bash
+# install opencv for video processing
+pip install opencv-python>=4.8.0
+
+# optional: ffmpeg for audio extraction (hybrid mode)
+# macOS: brew install ffmpeg
+# Ubuntu: sudo apt install ffmpeg
+# Windows: download from ffmpeg.org
+```
+
+---
+
 ## the API endpoints
 
 ```

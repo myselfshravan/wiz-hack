@@ -8,3 +8,6 @@ numpy>=1.24.0
 
 # Music file visualizer dependencies
 soundfile>=0.12.1
+
+# Video visualizer dependencies
+opencv-python>=4.8.0

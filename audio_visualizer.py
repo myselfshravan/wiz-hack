@@ -44,6 +44,7 @@ class AudioVisualizer:
         brightness_boost=1.5,
         min_brightness=10,
         max_brightness=100,
+        sensitivity=1.0,
     ):
         """
         Initialize the visualizer.
@@ -57,6 +58,7 @@ class AudioVisualizer:
             brightness_boost: Brightness multiplier (default: 1.5)
             min_brightness: Minimum brightness level (default: 10)
             max_brightness: Maximum brightness level (default: 100)
+            sensitivity: How dramatically brightness reacts (default: 1.0)
         """
         self.light_ips = light_ips
         self.lights = [WizLight(ip) for ip in light_ips]
@@ -72,13 +74,28 @@ class AudioVisualizer:
         if mode == "multi" and len(light_ips) > 1:
             self.mapper = MultiLightMapper()
         elif mode == "pulse":
-            self.mapper = PulseModeMapper(min_brightness=min_brightness, max_brightness=max_brightness)
+            self.mapper = PulseModeMapper(
+                min_brightness=min_brightness,
+                max_brightness=max_brightness,
+                sensitivity=sensitivity,
+            )
         elif mode == "strobe":
-            self.mapper = StrobeModeMapper(min_brightness=min_brightness, max_brightness=max_brightness)
+            self.mapper = StrobeModeMapper(
+                min_brightness=min_brightness,
+                max_brightness=max_brightness,
+                sensitivity=sensitivity,
+            )
         elif mode == "spectrum_pulse":
-            self.mapper = SpectrumPulseMapper(brightness_emphasis=brightness_boost, min_brightness=min_brightness, max_brightness=max_brightness)
+            self.mapper = SpectrumPulseMapper(
+                brightness_emphasis=brightness_boost,
+                min_brightness=min_brightness,
+                max_brightness=max_brightness,
+                sensitivity=sensitivity,
+            )
         else:
-            self.mapper = FrequencyToRGBMapper(mode=mode, brightness_boost=brightness_boost)
+            self.mapper = FrequencyToRGBMapper(
+                mode=mode, brightness_boost=brightness_boost
+            )
 
         # Threading for non-blocking light updates
         self.color_queue = queue.Queue(maxsize=1)
@@ -250,12 +267,18 @@ def discover_lights():
 
 def main():
     """Main entry point."""
-    parser = argparse.ArgumentParser(
-        description="Audio-reactive Wiz light controller"
-    )
+    parser = argparse.ArgumentParser(description="Audio-reactive Wiz light controller")
     parser.add_argument(
         "--mode",
-        choices=["frequency_bands", "energy", "rainbow", "multi", "pulse", "strobe", "spectrum_pulse"],
+        choices=[
+            "frequency_bands",
+            "energy",
+            "rainbow",
+            "multi",
+            "pulse",
+            "strobe",
+            "spectrum_pulse",
+        ],
         default="frequency_bands",
         help="Color mapping mode (default: frequency_bands)",
     )
@@ -302,6 +325,12 @@ def main():
         help="Maximum brightness percentage 0-100 (default: 100)",
     )
     parser.add_argument(
+        "--sensitivity",
+        type=float,
+        default=1.0,
+        help="Brightness reaction sensitivity (default: 1.0, higher = more dramatic, try 2.0-3.0 for party mode)",
+    )
+    parser.add_argument(
         "--list-devices", action="store_true", help="List available audio devices"
     )
 
@@ -334,6 +363,7 @@ def main():
         brightness_boost=args.brightness_boost,
         min_brightness=args.min_brightness,
         max_brightness=args.max_brightness,
+        sensitivity=args.sensitivity,
     )
 
     try:

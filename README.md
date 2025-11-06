@@ -157,6 +157,31 @@ python audio_visualizer.py --mode strobe --min-brightness 5 --max-brightness 100
 python audio_visualizer.py --mode spectrum_pulse --min-brightness 20 --max-brightness 50
 ```
 
+**sensitivity control** (make brightness changes MORE dramatic):
+
+```bash
+# YOUR CASE - full party mode with 10-30% range but DRAMATIC swings
+# sensitivity=2.5 makes it use the FULL 10-30% range aggressively
+python audio_visualizer.py --mode spectrum_pulse \
+  --min-brightness 10 --max-brightness 30 \
+  --sensitivity 2.5 --smoothing 0.1
+
+# extreme party strobe (full range, max sensitivity, no smoothing)
+python audio_visualizer.py --mode strobe \
+  --min-brightness 5 --max-brightness 100 \
+  --sensitivity 3.0 --smoothing 0
+
+# subtle but noticeable (lower sensitivity)
+python audio_visualizer.py --mode pulse \
+  --sensitivity 0.5
+```
+
+**what sensitivity does:**
+- sensitivity=1.0 (default): normal behavior
+- sensitivity=2.0-3.0: dramatic swings, uses full brightness range
+- sensitivity=0.5: subtle, gradual changes
+- higher sensitivity = more party mode energy!
+
 **how it works:**
 
 1. captures audio from your mic using `sounddevice`

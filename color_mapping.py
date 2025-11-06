@@ -256,7 +256,11 @@ class PulseModeMapper:
     """
 
     def __init__(
-        self, base_color=(255, 200, 150), min_brightness=10, max_brightness=100
+        self,
+        base_color=(255, 200, 150),
+        min_brightness=10,
+        max_brightness=100,
+        sensitivity=1.0,
     ):
         """
         Initialize pulse mode mapper.
@@ -265,10 +269,12 @@ class PulseModeMapper:
             base_color: RGB tuple for static color (default: warm white)
             min_brightness: Minimum brightness level (default: 10)
             max_brightness: Maximum brightness level (default: 100)
+            sensitivity: How dramatically brightness reacts (default: 1.0, higher = more dramatic)
         """
         self.base_color = base_color
         self.min_brightness = min_brightness
         self.max_brightness = max_brightness
+        self.sensitivity = sensitivity
 
     def map(self, bass, mids, treble, amplitude=None):
         """
@@ -291,11 +297,12 @@ class PulseModeMapper:
             energy = (bass + mids + treble) / 3
 
         # Map energy to brightness within user-defined range
-        # Use power curve to make quiet parts visible but loud parts dramatic
+        # Sensitivity controls the power curve: higher = more dramatic swings
+        power = 1.5 / self.sensitivity if self.sensitivity > 0 else 1.5
         brightness_range = self.max_brightness - self.min_brightness
         brightness = int(
             np.clip(
-                self.min_brightness + (energy**1.5) * brightness_range,
+                self.min_brightness + (energy**power) * brightness_range,
                 self.min_brightness,
                 self.max_brightness,
             )
@@ -316,6 +323,7 @@ class StrobeModeMapper:
         threshold=1.3,
         min_brightness=5,
         max_brightness=100,
+        sensitivity=1.0,
     ):
         """
         Initialize strobe mode mapper.
@@ -325,9 +333,11 @@ class StrobeModeMapper:
             threshold: Beat detection sensitivity (lower = more sensitive)
             min_brightness: Minimum brightness level (default: 5)
             max_brightness: Maximum brightness level (default: 100)
+            sensitivity: How dramatically brightness reacts (default: 1.0, higher = more dramatic)
         """
         self.strobe_color = strobe_color
-        self.threshold = threshold
+        # Adjust threshold based on sensitivity: higher sensitivity = easier to trigger
+        self.threshold = threshold / sensitivity if sensitivity > 0 else threshold
         self.min_brightness = min_brightness
         self.max_brightness = max_brightness
         self.last_energy = 0.0
@@ -383,7 +393,13 @@ class SpectrumPulseMapper:
     Best of both worlds - see the frequency colors but the pulse is obvious.
     """
 
-    def __init__(self, brightness_emphasis=2.0, min_brightness=5, max_brightness=100):
+    def __init__(
+        self,
+        brightness_emphasis=2.0,
+        min_brightness=5,
+        max_brightness=100,
+        sensitivity=1.0,
+    ):
         """
         Initialize spectrum pulse mapper.
 
@@ -391,10 +407,12 @@ class SpectrumPulseMapper:
             brightness_emphasis: How much to emphasize brightness (default: 2.0)
             min_brightness: Minimum brightness level (default: 5)
             max_brightness: Maximum brightness level (default: 100)
+            sensitivity: How dramatically brightness reacts (default: 1.0, higher = more dramatic)
         """
         self.brightness_emphasis = brightness_emphasis
         self.min_brightness = min_brightness
         self.max_brightness = max_brightness
+        self.sensitivity = sensitivity
 
     def map(self, bass, mids, treble, amplitude=None):
         """
@@ -430,11 +448,16 @@ class SpectrumPulseMapper:
         energy = amplitude if amplitude is not None else (bass + mids + treble) / 3
 
         # Aggressive brightness scaling within user-defined range
+        # Sensitivity modifies the power curve for more dramatic changes
+        power = (
+            (1.0 / self.brightness_emphasis) / self.sensitivity
+            if self.sensitivity > 0
+            else (1.0 / self.brightness_emphasis)
+        )
         brightness_range = self.max_brightness - self.min_brightness
         brightness = int(
             np.clip(
-                self.min_brightness
-                + (energy ** (1.0 / self.brightness_emphasis)) * brightness_range,
+                self.min_brightness + (energy**power) * brightness_range,
                 self.min_brightness,
                 self.max_brightness,
             )

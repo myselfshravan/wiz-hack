@@ -9,3 +9,7 @@ wheels/
 # Virtual environments
 .venv
 video/
+music/
+
+# Environment variable files
+.env

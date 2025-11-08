@@ -120,6 +120,12 @@ python audio_visualizer.py --mode strobe
 # spectrum_pulse mode - subtle color hints + aggressive brightness
 # best of both worlds - bass=red, treble=blue, but brightness is the star
 python audio_visualizer.py --mode spectrum_pulse
+
+# spectrum_pulse_v2 mode - SNAPPIER, MORE VOLATILE (LATEST!)
+# advanced spectral flux detection, dual-time smoothing, beat pops
+# feels ALIVE with micro-jitter, fast attack/slow release
+# perfect for club-style lighting that reacts to every transient
+python audio_visualizer.py --mode spectrum_pulse_v2
 ```
 
 **control specific lights:**
@@ -175,6 +181,36 @@ python audio_visualizer.py --mode pulse \
 3. bass (20-250Hz) → red, mids (250-4000Hz) → green, treble (4000-20000Hz) → blue
 4. sends RGB values to lights via UDP (~20-50ms latency)
 5. applies smoothing so colors don't jitter
+
+**spectrum_pulse_v2 technical deep dive** (for the nerds):
+
+what makes v2 different:
+- **spectral flux detection** - tracks frame-to-frame changes to catch transients/beats
+- **dual-time smoothing** - fast attack (35ms), slower release (160ms) for natural dynamics
+- **hann windowing** - reduces FFT smearing for cleaner frequency analysis
+- **rolling median normalization** - auto-gain that adapts to room/volume
+- **beat boost** - brief brightness overdrive on detected transients
+- **micro-jitter** - small random brightness variation for "alive" feel
+- **smaller buffer** (1024 vs 2048) - lower latency, snappier response
+
+tuning tips:
+```bash
+# even snappier - lower buffer, more volatility
+python audio_visualizer.py --mode spectrum_pulse_v2 --buffer-size 512
+
+# more chaotic/energetic - increase jitter internally via code
+# edit audio_visualizer.py line 100: jitter_amount=0.12
+
+# calmer but still responsive - increase release time
+# edit audio_visualizer.py line 96: release_ms=220
+```
+
+why it feels different:
+- brightness JUMPS up on beats (fast attack) but FADES down naturally (slow release)
+- spectral flux catches drum hits, snares, kicks that RMS alone misses
+- beat boost briefly overdrives brightness past normal max for that "pop"
+- micro-jitter prevents dead-zone flatness between beats
+- result: lights feel responsive, dynamic, and ALIVE
 
 ---
 

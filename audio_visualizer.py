@@ -11,6 +11,10 @@ Modes:
     - energy: Warm/cool colors based on energy level
     - rainbow: Rainbow colors based on dominant frequency
     - multi: Different lights show different frequency bands
+    - pulse: Static color with brightness pulsing to music
+    - strobe: Aggressive strobe effect on beats
+    - spectrum_pulse: Frequency colors with brightness emphasis
+    - spectrum_pulse_v2: Snappier, more volatile with beat detection (NEW!)
 """
 
 import sounddevice as sd
@@ -20,13 +24,14 @@ import time
 import threading
 import queue
 from wiz_control import WizLight
-from audio_analysis import AudioAnalyzer
+from audio_analysis import AudioAnalyzer, AudioAnalyzerV2
 from color_mapping import (
     FrequencyToRGBMapper,
     MultiLightMapper,
     PulseModeMapper,
     StrobeModeMapper,
     SpectrumPulseMapper,
+    SpectrumPulseMapperV2,
 )
 
 
@@ -60,10 +65,18 @@ class AudioVisualizer:
         self.mode = mode
         self.running = False
 
-        # Audio analysis
-        self.analyzer = AudioAnalyzer(
-            sample_rate=sample_rate, buffer_size=buffer_size, smoothing=smoothing
-        )
+        # Audio analysis - V2 for spectrum_pulse_v2 mode
+        if mode == "spectrum_pulse_v2":
+            self.analyzer = AudioAnalyzerV2(
+                sample_rate=sample_rate,
+                buffer_size=buffer_size,
+                smoothing_attack=0.4,  # Faster attack for snappier response
+                smoothing_release=0.15,  # Slower release for natural fade
+            )
+        else:
+            self.analyzer = AudioAnalyzer(
+                sample_rate=sample_rate, buffer_size=buffer_size, smoothing=smoothing
+            )
 
         # Color mapping
         if mode == "multi" and len(light_ips) > 1:
@@ -80,6 +93,15 @@ class AudioVisualizer:
             self.mapper = SpectrumPulseMapper(
                 brightness_emphasis=brightness_boost,
                 sensitivity=sensitivity,
+            )
+        elif mode == "spectrum_pulse_v2":
+            self.mapper = SpectrumPulseMapperV2(
+                attack_ms=25,  # Faster attack for snappier response
+                release_ms=200,  # Longer release for smoother fade
+                volatility=1.2,  # Reduced volatility for better dynamics
+                beat_boost=0.3,  # Less aggressive boost
+                strobe_on_boost=True,
+                jitter_amount=0.05,  # Subtle jitter
             )
         else:
             self.mapper = FrequencyToRGBMapper(
@@ -141,18 +163,28 @@ class AudioVisualizer:
 
         # Analyze frequencies
         bass, mids, treble = self.analyzer.analyze(audio)
-        amplitude = self.analyzer.get_amplitude(audio)
 
         # Store for display
         self.current_bass = bass
         self.current_mids = mids
         self.current_treble = treble
 
-        # Map to colors
-        if self.mode == "multi" and len(self.lights) > 1:
-            colors = self.mapper.map_lights(bass, mids, treble, len(self.lights))
+        # Map to colors - V2 mode uses different parameters
+        if self.mode == "spectrum_pulse_v2":
+            level = self.analyzer.get_level()
+            flux_boost = self.analyzer.get_flux_boost()
+            if self.mode == "multi" and len(self.lights) > 1:
+                colors = self.mapper.map_lights(
+                    bass, mids, treble, len(self.lights), level, flux_boost
+                )
+            else:
+                colors = self.mapper.map(bass, mids, treble, level, flux_boost)
         else:
-            colors = self.mapper.map(bass, mids, treble, amplitude)
+            amplitude = self.analyzer.get_amplitude(audio)
+            if self.mode == "multi" and len(self.lights) > 1:
+                colors = self.mapper.map_lights(bass, mids, treble, len(self.lights))
+            else:
+                colors = self.mapper.map(bass, mids, treble, amplitude)
 
         self.current_color = colors
 
@@ -269,6 +301,7 @@ def main():
             "pulse",
             "strobe",
             "spectrum_pulse",
+            "spectrum_pulse_v2",
         ],
         default="frequency_bands",
         help="Color mapping mode (default: frequency_bands)",

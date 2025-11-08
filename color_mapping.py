@@ -5,6 +5,8 @@ Maps frequency bands to color channels for audio-reactive lighting.
 """
 
 import numpy as np
+import time
+import random
 
 
 class FrequencyToRGBMapper:
@@ -452,3 +454,160 @@ class SpectrumPulseMapper:
         )
 
         return r, g, b, brightness
+
+
+class SpectrumPulseMapperV2:
+    """
+    Volatile, beat-reactive mapper with snappier response.
+    Features:
+    - Brightness: fast attack, slower release, non-linear curve
+    - Beat/transient: short-lived boost with optional strobe
+    - Color: band-dominant hint with saturation tied to volatility
+    - Micro-jitter: bounded flicker for "alive" feel between beats
+    """
+
+    def __init__(
+        self,
+        min_brightness=6,
+        max_brightness=100,
+        attack_ms=35,
+        release_ms=180,
+        volatility=1.3,
+        beat_boost=0.35,
+        strobe_on_boost=True,
+        jitter_amount=0.06,
+    ):
+        """
+        Initialize V2 mapper.
+
+        Args:
+            min_brightness: Minimum brightness (default: 6)
+            max_brightness: Maximum brightness (default: 100)
+            attack_ms: Attack time in milliseconds (default: 35)
+            release_ms: Release time in milliseconds (default: 180)
+            volatility: Swing intensity >1 = spicier (default: 1.3)
+            beat_boost: Extra brightness on transients (default: 0.35)
+            strobe_on_boost: Enable strobe flash on beats (default: True)
+            jitter_amount: Brightness jitter fraction (default: 0.06)
+        """
+        self.min_b = min_brightness
+        self.max_b = max_brightness
+        self.volatility = volatility
+        self.beat_boost = beat_boost
+        self.strobe_on_boost = strobe_on_boost
+        self.jitter_amount = jitter_amount
+
+        # Convert ms to smoothing time constants
+        self.attack_tau = attack_ms / 1000.0
+        self.release_tau = release_ms / 1000.0
+        self._last_t = time.monotonic()
+        self._b_smooth = 0.0
+
+        # Color memory (helps avoid abrupt hue jumps)
+        self._last_rgb = (160, 80, 200)
+
+    @staticmethod
+    def _ease(x):
+        """More punch around mid-levels; smooth near 0/1"""
+        x = np.clip(x, 0.0, 2.0)  # allow some overdrive before clipping
+        return (1 - np.cos(np.pi * np.clip(x, 0, 1))) / 2  # cosine ease-in-out
+
+    @staticmethod
+    def _lerp(a, b, t):
+        """Linear interpolation"""
+        return a + (b - a) * t
+
+    def _smooth_step(self, current, target, dt):
+        """Exponential smoothing based on dt"""
+        tau = self.attack_tau if target >= current else self.release_tau
+        if tau <= 0:
+            return target
+        alpha = 1 - np.exp(-dt / tau)
+        return current + alpha * (target - current)
+
+    def _pick_color(self, bass, mids, treble):
+        """
+        Weighted color based on frequency dominance.
+        Pulls saturation down slightly so brightness stands out.
+        """
+        bands = np.array([bass, mids, treble]) + 1e-6
+        w = bands / (bands.sum())
+
+        # Base colors for bass/mids/treble
+        Cb = np.array([220, 40, 140])  # magenta/red-ish
+        Cm = np.array([255, 180, 60])  # amber
+        Ct = np.array([60, 180, 255])  # cyan/blue
+
+        rgb = w[0] * Cb + w[1] * Cm + w[2] * Ct
+
+        # Pull saturation down slightly with inertia
+        rgb = 0.85 * rgb + 0.15 * np.array(self._last_rgb)
+        self._last_rgb = tuple(np.clip(rgb, 0, 255).astype(int))
+        return self._last_rgb
+
+    def map(self, bass, mids, treble, level, flux_boost=0.0):
+        """
+        Map audio to colors with volatile brightness response.
+
+        Args:
+            bass, mids, treble: Frequency intensities (0-1)
+            level: Overall level (0-1+)
+            flux_boost: Transient boost amount (default: 0.0)
+
+        Returns:
+            tuple: (r, g, b, brightness)
+        """
+        now = time.monotonic()
+        dt = max(1e-3, now - self._last_t)
+        self._last_t = now
+
+        # Nonlinear brightness drive with power curve for better dynamics
+        # Higher volatility = more aggressive curve
+        power = 0.5 + (self.volatility - 1.0) * 0.3
+        drive = np.power(np.clip(level, 0, 1), power)
+
+        # Add transient/beat boost (short-lived)
+        if flux_boost > 0.0:
+            drive = np.clip(drive + self.beat_boost * flux_boost, 0, 1.5)
+
+        # Smooth with attack/release
+        self._b_smooth = self._smooth_step(self._b_smooth, drive, dt)
+
+        # Micro-jitter for "alive" feel (bounded, perceptible but not annoying)
+        if self.jitter_amount > 0:
+            jitter = (random.random() - 0.5) * 2.0 * self.jitter_amount
+        else:
+            jitter = 0.0
+
+        b_norm = float(np.clip(self._b_smooth + jitter, 0.0, 1.0))
+        brightness = int(
+            np.clip(
+                self.min_b + b_norm * (self.max_b - self.min_b), self.min_b, self.max_b
+            )
+        )
+
+        # Optional strobe tick on strong boost (quick single-frame nudge)
+        if self.strobe_on_boost and flux_boost > 0.5:
+            extra = min(30, int(flux_boost * 40))
+            brightness = min(self.max_b, brightness + extra)
+
+        r, g, b = self._pick_color(bass, mids, treble)
+        return int(r), int(g), int(b), brightness
+
+    def map_lights(self, bass, mids, treble, num_lights, level, flux_boost=0.0):
+        """
+        Map audio to multiple lights (for multi-light mode).
+
+        Args:
+            bass, mids, treble: Frequency intensities
+            num_lights: Number of lights to control
+            level: Overall level
+            flux_boost: Transient boost amount
+
+        Returns:
+            list: List of (r, g, b, brightness) tuples
+        """
+        # For multi-light mode, use the same color for all lights
+        # (can be customized to have different colors per light if desired)
+        color = self.map(bass, mids, treble, level, flux_boost)
+        return [color] * num_lights

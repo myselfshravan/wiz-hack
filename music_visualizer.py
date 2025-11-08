@@ -24,6 +24,7 @@ from color_mapping import (
     PulseModeMapper,
     StrobeModeMapper,
     SpectrumPulseMapper,
+    SimplePulseMapper,
 )
 
 
@@ -97,6 +98,15 @@ class MusicVisualizer:
             self.mapper = SpectrumPulseMapper(
                 brightness_emphasis=brightness_boost,
                 sensitivity=sensitivity,
+            )
+        elif mode == "spectrum_pulse_v3":
+            self.mapper = SimplePulseMapper(
+                min_brightness=10,
+                max_brightness=70,
+                peak_decay=0.985,
+                gamma=0.9,
+                noise_gate=0.05,
+                max_step=8,
             )
         else:
             self.mapper = FrequencyToRGBMapper(
@@ -332,6 +342,7 @@ def main():
             "pulse",
             "strobe",
             "spectrum_pulse",
+            "spectrum_pulse_v3",
         ],
         default="frequency_bands",
         help="Color mapping mode (default: frequency_bands)",

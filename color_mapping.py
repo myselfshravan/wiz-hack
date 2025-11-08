@@ -482,13 +482,13 @@ class SimplePulseMapper:
         self._last_rgb = (220, 120, 60)  # warm default
 
     def _pick_color(self, bass, mids, treble):
-        # Dominant band hint, but keep saturation moderate
-        if bass >= mids and bass >= treble:  # bass -> magenta/red
-            base = (200, 60, 140)
-        elif treble >= mids:  # treble -> cyan/blue
-            base = (70, 180, 255)
-        else:  # mids -> amber
-            base = (255, 180, 70)
+        # Dominant band hint, but with stronger, more aggressive colors
+        if bass >= mids and bass >= treble:  # bass -> deep red
+            base = (255, 40, 40)
+        elif treble >= mids:  # treble -> vivid blue
+            base = (50, 100, 255)
+        else:  # mids -> bright green
+            base = (60, 255, 80)
         # Light smoothing of hue changes
         r = int(0.8 * base[0] + 0.2 * self._last_rgb[0])
         g = int(0.8 * base[1] + 0.2 * self._last_rgb[1])

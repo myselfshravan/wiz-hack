@@ -2,7 +2,7 @@
 
 so basically i got bored and decided to hack and dive into my Philips Wiz lights instead of using their app like a normal person.
 
-**the problem:** the official Wiz app is... fine? but it's missing stuff. can't integrate with my own tools, and honestly where's the fun in just using an app?
+**the problem:** the official Wiz app is... fine? but it's missing stuff. can't integrate with my own tools, and honestly i just wanted to explore this
 
 **the solution:** turns out these Rs.500 bulbs just accept UDP packets on port 38899. no auth or protocols. sending raw JSON over UDP.
 
@@ -11,7 +11,6 @@ so basically i got bored and decided to hack and dive into my Philips Wiz lights
 - discovers all Wiz lights on your network (UDP broadcast go brrr)
 - turns them on/off via command line OR web interface
 - sets any RGB color + brightness you want
-- comes with a clean web UI because clicking buttons > typing commands sometimes
 - FastAPI backend that actually works
 - **makes your lights react to music in real-time** (bass→red, mids→green, treble→blue)
 
@@ -22,7 +21,6 @@ basically i went from "click app button" to "control my lights from terminal/bro
 ```
 pure python socket programming no dependencies for the core stuff
 FastAPI because i'm not writing raw HTTP in 2025
-vanilla HTML/CSS/JS web UI that just works
 zero authentication we live dangerously (jk it's local network only)
 ```
 
@@ -49,31 +47,9 @@ pip install -r requirements.txt
 python api_server.py
 ```
 
-5. **open browser** http://localhost:8000
+5. **open browser** `http://localhost:8000`
 
-that's it. you can now control your lights like a hacker.
-
-## CLI mode (for the terminal warriors)
-
-discover all lights on your network:
-
-```bash
-python wiz_control.py discover
-```
-
-turn on a specific light:
-
-```bash
-python wiz_control.py on 192.168.1.100
-```
-
-set it to purple (because why not):
-
-```bash
-python wiz_control.py color 192.168.1.100 128 0 128
-```
-
-## 🎵 audio & music visualizer modes (the fun part)
+## audio & music visualizer modes (the fun part)
 
 okay this is where it gets insane. your lights react to music in real-time.
 
@@ -93,6 +69,7 @@ that's it. play some music, your lights will dance to it. bass makes it red, mid
 **different modes:**
 
 **color-focused modes** (default behavior - colors change with frequencies):
+
 ```bash
 # default - frequency bands mapped to RGB
 python audio_visualizer.py --mode frequency_bands
@@ -108,6 +85,7 @@ python audio_visualizer.py --mode multi
 ```
 
 **brightness-focused modes** (NEW - makes the sync super obvious!):
+
 ```bash
 # pulse mode - static warm color, brightness pulses with music
 # BEST for showing sync in videos - everyone instantly sees it
@@ -120,17 +98,6 @@ python audio_visualizer.py --mode strobe
 # spectrum_pulse mode - subtle color hints + aggressive brightness
 # best of both worlds - bass=red, treble=blue, but brightness is the star
 python audio_visualizer.py --mode spectrum_pulse
-```
-
-**control specific lights:**
-
-```bash
-# auto-discover and use all lights
-python audio_visualizer.py --lights all
-
-# use specific light(s)
-python audio_visualizer.py --lights 192.168.1.100
-python audio_visualizer.py --lights 192.168.1.100,192.168.1.101
 ```
 
 **brightness control:**
@@ -150,19 +117,17 @@ python audio_visualizer.py --brightness-boost 1.0
 
 ```bash
 # dramatic party mode with aggressive swings
-python audio_visualizer.py --mode spectrum_pulse \
-  --sensitivity 2.5 --smoothing 0.1
+python audio_visualizer.py --mode spectrum_pulse --sensitivity 2.5 --smoothing 0.1
 
 # extreme party strobe (max sensitivity, no smoothing)
-python audio_visualizer.py --mode strobe \
-  --sensitivity 3.0 --smoothing 0
+python audio_visualizer.py --mode strobe --sensitivity 3.0 --smoothing 0
 
 # subtle but noticeable (lower sensitivity)
-python audio_visualizer.py --mode pulse \
-  --sensitivity 0.5
+python audio_visualizer.py --mode pulse --sensitivity 0.5
 ```
 
 **what sensitivity does:**
+
 - sensitivity=1.0 (default): normal behavior
 - sensitivity=2.0-3.0: dramatic swings, uses full brightness range
 - sensitivity=0.5: subtle, gradual changes
@@ -183,6 +148,7 @@ python audio_visualizer.py --mode pulse \
 play audio files (MP3, WAV, FLAC) with lights perfectly synced - no microphone needed!
 
 **why use this instead of mic:**
+
 - perfect sync (no lag, no background noise)
 - same song = same light show every time
 - way better for demos and videos
@@ -194,24 +160,8 @@ play audio files (MP3, WAV, FLAC) with lights perfectly synced - no microphone n
 python music_visualizer.py --file song.mp3
 ```
 
-**all visualizer options work:**
-
-```bash
-# party mode with dramatic swings
-python music_visualizer.py --file edm.mp3 \
-  --mode spectrum_pulse \
-  --sensitivity 2.5 --smoothing 0.1
-
-# extreme strobe mode
-python music_visualizer.py --file dubstep.mp3 \
-  --mode strobe \
-  --sensitivity 3.0 --smoothing 0
-
-# loop for continuous party
-python music_visualizer.py --file party.mp3 --loop
-```
-
 **on-screen display:**
+
 - progress bar with time
 - frequency visualization
 - brightness indicator
@@ -232,11 +182,11 @@ python music_visualizer.py --file party.mp3 --loop
 
 ---
 
-## 🎬 video visualizer (NEXT LEVEL INSANITY!)
+## 🎬 video visualizer (NEXT LEVEL INSANITY! - Part-1)
 
 okay so audio was cool, but what if your lights sync to VIDEOS? like actual movie scenes, game footage, anything.
 
-**DIY Ambilight but better** - Philips charges $$$$ for this. you just reverse-engineered it.
+**DIY Ambilight but better** - Philips charges 12k-15k for this. I just reverse-engineered it.
 
 **basic usage:**
 
@@ -305,13 +255,7 @@ python video_visualizer.py --file video.mp4 --no-display
 **requirements:**
 
 ```bash
-# install opencv for video processing
-pip install opencv-python>=4.8.0
-
-# optional: ffmpeg for audio extraction (hybrid mode)
-# macOS: brew install ffmpeg
-# Ubuntu: sudo apt install ffmpeg
-# Windows: download from ffmpeg.org
+pip install -r requirements.txt
 ```
 
 ---
@@ -334,12 +278,6 @@ POST /light/{ip}/color     set specific light color
 
 Wiz lights don't have an official API. they just listen on UDP port 38899 and accept JSON commands. that's it. that's the whole security model.
 
-```python
-# literally this simple
-message = {"id": 1, "method": "setPilot", "params": {"r": 255, "g": 0, "b": 0}}
-sock.sendto(json.dumps(message).encode(), (light_ip, 38899))
-```
-
 for discovery, i just broadcast to 255.255.255.255 and collect responses. every light on the network yells back with their details.
 
 shoutout to [sbidy/pywizlight](https://github.com/sbidy/pywizlight) for the unofficial protocol docs
@@ -348,9 +286,8 @@ shoutout to [sbidy/pywizlight](https://github.com/sbidy/pywizlight) for the unof
 
 1. i wanted custom automations the app doesn't support
 2. reverse engineering IoT devices is fun
-3. terminal > app (fight me)
-4. now i can control my lights from literally anywhere - scripts, cron jobs, webhooks, you name it
-5. because i can
+3. now i can control my lights from literally anywhere - scripts, cron jobs, webhooks, you name it
+4. because i can
 
 ## things you can do with this
 
@@ -359,7 +296,7 @@ shoutout to [sbidy/pywizlight](https://github.com/sbidy/pywizlight) for the unof
 - create your own scenes with gradients and transitions
 - automate based on literally anything (weather, stocks, github commits)
 - impress your friends (or concern them)
-- throw RGB parties without expensive DJ equipment
+- throw RGB parties
 
 ## security note
 
@@ -379,4 +316,4 @@ _built by someone who thinks RGB lights should be programmable_
 
 _follow me on [linkedin](https://linkedin.com/in/shravanrevanna) for more questionable automation projects_
 
-p.s. - yes i know there are existing libraries for this. building it from scratch was the point >
+p.s. - yes i know there might be existing libraries for this. building it from scratch was the point >>

@@ -19,6 +19,7 @@ import argparse
 import time
 import threading
 import queue
+from concurrent.futures import ThreadPoolExecutor
 from wiz_control import WizLight
 from audio_analysis import AudioAnalyzer
 from color_mapping import (
@@ -28,6 +29,11 @@ from color_mapping import (
     StrobeModeMapper,
     SpectrumPulseMapper,
     SimplePulseMapper,
+    StereoSplitMapper,
+    ComplementaryPulseMapper,
+    BeatLeaderFollowerMapper,
+    FrequencyDanceMapper,
+    SpectrumGradientMapper,
 )
 
 
@@ -85,6 +91,53 @@ class AudioVisualizer:
         elif mode == "spectrum_pulse_v3":
             self.mapper = SimplePulseMapper(
                 min_brightness=10,
+                max_brightness=100,
+                peak_decay=0.985,
+                gamma=0.9,
+                noise_gate=0.05,
+                max_step=8,
+            )
+        # New dual-light creative modes
+        elif mode == "stereo_split":
+            self.mapper = StereoSplitMapper(
+                min_brightness=10,
+                max_brightness=70,
+                peak_decay=0.985,
+                gamma=0.9,
+                noise_gate=0.05,
+                max_step=8,
+            )
+        elif mode == "complementary_pulse":
+            self.mapper = ComplementaryPulseMapper(
+                min_brightness=15,
+                max_brightness=70,
+                peak_decay=0.985,
+                gamma=0.9,
+                noise_gate=0.05,
+                max_step=8,
+            )
+        elif mode == "beat_leader_follower":
+            self.mapper = BeatLeaderFollowerMapper(
+                min_brightness=10,
+                max_brightness=70,
+                peak_decay=0.985,
+                gamma=0.7,
+                noise_gate=0.05,
+                max_step=15,
+                delay_frames=4,
+            )
+        elif mode == "frequency_dance":
+            self.mapper = FrequencyDanceMapper(
+                min_brightness=15,
+                max_brightness=70,
+                peak_decay=0.985,
+                gamma=0.9,
+                noise_gate=0.05,
+                max_step=8,
+            )
+        elif mode == "spectrum_gradient":
+            self.mapper = SpectrumGradientMapper(
+                min_brightness=10,
                 max_brightness=70,
                 peak_decay=0.985,
                 gamma=0.9,
@@ -112,29 +165,41 @@ class AudioVisualizer:
         self.last_print_time = time.time()
 
     def _light_update_worker(self):
-        """Background thread that sends color updates to lights."""
+        """Background thread that sends color updates to lights in parallel."""
+        # Create thread pool for parallel UDP transmission
+        executor = ThreadPoolExecutor(max_workers=len(self.lights))
+
+        def safe_set_color(light, r, g, b, brightness):
+            """Wrapper to safely set color with error handling."""
+            try:
+                light.set_color(r, g, b, brightness)
+            except Exception:
+                pass  # Ignore network errors
+
         while True:
             try:
                 colors = self.color_queue.get(timeout=0.1)
 
-                # Send to all lights
+                # Send to all lights IN PARALLEL
                 if isinstance(colors, list):
                     # Multi-light mode: different color per light
-                    for light, (r, g, b, brightness) in zip(self.lights, colors):
-                        try:
-                            light.set_color(r, g, b, brightness)
-                        except Exception as e:
-                            print(e)
-                            pass  # Ignore network errors
+                    futures = [
+                        executor.submit(safe_set_color, light, r, g, b, brightness)
+                        for light, (r, g, b, brightness) in zip(self.lights, colors)
+                    ]
+                    # Wait for all parallel updates to complete
+                    for future in futures:
+                        future.result()
                 else:
-                    # Single color for all lights
+                    # Single color for all lights - still parallel
                     r, g, b, brightness = colors
-                    for light in self.lights:
-                        try:
-                            light.set_color(r, g, b, brightness)
-                        except Exception as e:
-                            print(e)
-                            pass  # Ignore network errors
+                    futures = [
+                        executor.submit(safe_set_color, light, r, g, b, brightness)
+                        for light in self.lights
+                    ]
+                    # Wait for all parallel updates to complete
+                    for future in futures:
+                        future.result()
 
                 self.update_count += 1
 
@@ -159,7 +224,17 @@ class AudioVisualizer:
         self.current_treble = treble
 
         # Map to colors
-        if self.mode == "multi" and len(self.lights) > 1:
+        # Dual-light modes use map_lights() for two-light effects
+        dual_light_modes = [
+            "multi",
+            "stereo_split",
+            "complementary_pulse",
+            "beat_leader_follower",
+            "frequency_dance",
+            "spectrum_gradient",
+        ]
+
+        if self.mode in dual_light_modes and len(self.lights) > 1:
             colors = self.mapper.map_lights(bass, mids, treble, len(self.lights))
         else:
             colors = self.mapper.map(bass, mids, treble, amplitude)
@@ -280,6 +355,11 @@ def main():
             "strobe",
             "spectrum_pulse",
             "spectrum_pulse_v3",
+            "stereo_split",
+            "complementary_pulse",
+            "beat_leader_follower",
+            "frequency_dance",
+            "spectrum_gradient",
         ],
         default="frequency_bands",
         help="Color mapping mode (default: frequency_bands)",

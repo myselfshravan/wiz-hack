@@ -1001,3 +1001,130 @@ class SpectrumGradientMapper:
         """Fallback for single-light mode."""
         colors = self.map_lights(bass, mids, treble, 1)
         return colors[0]
+
+
+# ==================== STOCK MARKET MAPPER ====================
+
+
+class StockPriceMapper:
+    """
+    📈 Stock market price change mapper.
+    Maps stock price changes to light colors with smooth transitions.
+
+    Color Logic:
+    - GREEN: Stock price UP from opening (positive day change)
+    - RED: Stock price DOWN from opening (negative day change)
+    - YELLOW: Stock price NEUTRAL (within threshold of opening)
+
+    Brightness scales with the magnitude of price change.
+    """
+
+    def __init__(
+        self,
+        min_brightness=30,
+        max_brightness=100,
+        green_color=(0, 255, 100),
+        red_color=(255, 50, 0),
+        yellow_color=(255, 200, 0),
+        threshold=0.10,
+    ):
+        """
+        Initialize stock price mapper.
+
+        Args:
+            min_brightness (int): Minimum brightness for small changes (0-100)
+            max_brightness (int): Maximum brightness for large changes (0-100)
+            green_color (tuple): RGB for positive changes
+            red_color (tuple): RGB for negative changes
+            yellow_color (tuple): RGB for neutral/no change
+            threshold (float): Minimum price change to trigger non-neutral color
+        """
+        self.min_b = int(min_brightness)
+        self.max_b = int(max_brightness)
+        self.green_color = green_color
+        self.red_color = red_color
+        self.yellow_color = yellow_color
+        self.threshold = float(threshold)
+
+    def map(self, day_change_abs, day_change_perc=None):
+        """
+        Map stock price change to light color and brightness.
+
+        Args:
+            day_change_abs (float): Absolute price change from opening (in ₹)
+            day_change_perc (float): Percentage change from opening (optional)
+
+        Returns:
+            tuple: (r, g, b, brightness) values
+
+        Example:
+            >>> mapper = StockPriceMapper()
+            >>> r, g, b, brightness = mapper.map(15.50, 1.5)  # +₹15.50 (+1.5%)
+            >>> # Returns green color with brightness based on magnitude
+        """
+        # Determine direction and base color
+        if day_change_abs > self.threshold:
+            # Positive change → GREEN
+            base_color = self.green_color
+            magnitude = abs(day_change_abs)
+        elif day_change_abs < -self.threshold:
+            # Negative change → RED
+            base_color = self.red_color
+            magnitude = abs(day_change_abs)
+        else:
+            # Neutral → YELLOW
+            base_color = self.yellow_color
+            magnitude = 0
+
+        # Calculate brightness based on magnitude
+        # Map percentage change to brightness range
+        if day_change_perc is not None:
+            # Use percentage for brightness scaling
+            abs_perc = abs(day_change_perc)
+
+            if abs_perc < 0.5:
+                # Small change (0-0.5%) → low brightness
+                brightness = self.min_b
+            elif abs_perc < 1.0:
+                # Medium change (0.5-1%) → medium brightness
+                brightness = int(self.min_b + (self.max_b - self.min_b) * 0.4)
+            elif abs_perc < 2.0:
+                # Significant change (1-2%) → high brightness
+                brightness = int(self.min_b + (self.max_b - self.min_b) * 0.7)
+            else:
+                # Large change (>2%) → max brightness
+                brightness = self.max_b
+        else:
+            # Use absolute value for brightness scaling
+            if magnitude < 1.0:
+                brightness = self.min_b
+            elif magnitude < 5.0:
+                brightness = int(self.min_b + (self.max_b - self.min_b) * 0.5)
+            elif magnitude < 10.0:
+                brightness = int(self.min_b + (self.max_b - self.min_b) * 0.75)
+            else:
+                brightness = self.max_b
+
+        # Return color components
+        return base_color[0], base_color[1], base_color[2], brightness
+
+    def get_color_name(self, day_change_abs):
+        """
+        Get human-readable color name for a price change.
+
+        Args:
+            day_change_abs (float): Absolute price change from opening
+
+        Returns:
+            str: Color name with emoji
+
+        Example:
+            >>> mapper.get_color_name(5.50)
+            "🟢 GREEN"
+        """
+        if day_change_abs > self.threshold:
+            return "🟢 GREEN"
+        elif day_change_abs < -self.threshold:
+            return "🔴 RED"
+        else:
+            return "🟡 YELLOW"

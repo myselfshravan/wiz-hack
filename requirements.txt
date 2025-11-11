@@ -11,3 +11,7 @@ soundfile>=0.12.1
 
 # Video visualizer dependencies
 opencv-python>=4.8.0
+
+# Stock market visualizer dependencies
+growwapi>=1.0.0
+python-dotenv>=1.0.0

@@ -260,6 +260,128 @@ pip install -r requirements.txt
 
 ---
 
+## 📈 stock market visualizer (PART-2 - THE MONEY MAKER!)
+
+okay so we made lights dance to audio and video. now they react to **THE STOCK MARKET**.
+
+**the vibe:** your lights turn green when stocks go up, red when they go down. basically your room becomes a real-time trading floor indicator.
+
+### two modes available:
+
+#### 1. Real-time Mode (`stock_visualizer.py`)
+Monitors live stock prices during market hours:
+
+```bash
+python stock_visualizer.py
+```
+
+**best for:**
+- day trading (your room literally shows if you're winning or losing)
+- market hours monitoring (9:15 AM - 3:30 PM IST)
+- flex on your friends during market hours
+- knowing stock performance without checking your phone
+
+#### 2. Historical Replay Mode (`stock_replay.py`)
+Replays historical stock data with smooth transitions - **works anytime!**
+
+```bash
+python stock_replay.py
+```
+
+**best for:**
+- testing outside market hours
+- analyzing past price movements with visual feedback
+- making sick demo videos
+- understanding how volatile your stonks are
+- procrastination with purpose
+
+### configuration (`stock_config.py`)
+
+all settings in one place:
+
+```python
+# which stock to monitor
+TRADING_SYMBOL = "HDFCBANK"  # change to any NSE stock
+
+# your light
+LIGHT_IP = "192.168.1.52"    # from discover command
+
+# colors (customize to your vibe)
+GREEN_COLOR = (0, 255, 100)  # price UP
+RED_COLOR = (255, 50, 0)     # price DOWN
+YELLOW_COLOR = (255, 200, 0) # price NEUTRAL
+
+# smooth transitions (make it buttery smooth)
+SMOOTH_TRANSITIONS = True
+TRANSITION_STEPS = 10
+TRANSITION_DELAY = 0.05  # 50ms between steps
+
+# replay settings
+REPLAY_SPEED = 20  # 20x speed
+HOURS_TO_FETCH = 4  # last 4 hours of data
+```
+
+### color logic:
+
+- 🟢 **GREEN** → Stock is above today's opening price
+- 🔴 **RED** → Stock is below today's opening price
+- 🟡 **YELLOW** → Stock is neutral (within ±₹0.10)
+- ✨ **Smooth transitions** between colors (no jarring jumps!)
+
+brightness scales with magnitude of price change.
+
+### how it works:
+
+1. connects to Groww Trade API
+2. fetches real-time or historical stock prices
+3. calculates day change (current price - opening price)
+4. smoothly transitions light color based on performance
+5. updates every 1 second (real-time) or replays at configured speed (historical)
+
+### epic use cases:
+
+- **day trading setup** - know if you're winning without checking your screen
+- **party mode** - "yo my room turns green when I make money"
+- **demo videos** - replay volatile stocks for dramatic effect
+- **procrastination** - watch historical market movements with pretty lights
+- **intimidation** - run this during salary negotiation calls
+- **ambient awareness** - peripheral vision tells you market direction
+
+### pro tips:
+
+- use `REPLAY_SPEED = 20` for full day replay in ~12 minutes
+- film in dark room for maximum drama
+- use stocks with high volatility (crypto stocks, EV stocks) for best effect
+- `SMOOTH_TRANSITIONS = True` makes it way smoother than regular trading apps
+- test with `stock_replay.py` first before going live
+- run during market hours with `stock_visualizer.py` for real flex
+
+### requirements:
+
+```bash
+pip install growwapi python-dotenv
+```
+
+**get API token from:** https://groww.in/trade-api
+**find stock tokens in:** `data/instrument.csv` (provided in repo)
+
+add to your `.env` file:
+```
+GROWW_AUTH_TOKEN=your_auth_token_here
+```
+
+### example output:
+
+```
+[11:30:45] HDFCBANK | Price: ₹989.70 | Change: +₹7.40 (+0.75%) ↑ | Light: 🟢 GREEN (65%)
+[11:30:46] HDFCBANK | Price: ₹989.65 | Change: +₹7.35 (+0.74%) ↑ | Light: 🟢 GREEN (65%)
+[11:30:47] HDFCBANK | Price: ₹988.20 | Change: -₹1.40 (-0.14%) ↓ | Light: 🔴 RED (35%)
+```
+
+**your room literally becomes a stock ticker. this is the future.**
+
+---
+
 ## the API endpoints
 
 ```

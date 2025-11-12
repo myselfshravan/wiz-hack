@@ -239,9 +239,8 @@ python video_visualizer.py --file video.mp4 --no-display
 **epic use cases:**
 
 - **movie nights** - your living room becomes part of the movie (explosions, sunsets, underwater scenes all sync)
-- **gaming** - lights react to game footage (record gameplay, play it back with light sync)
+- **gaming** - lights react to game footage
 - **music videos** - combine visual + audio sync for full sensory experience
-- **presentations** - lights match your slides (record screen, play with lights)
 - **horror movies** - dark scenes = dim lights, jump scares = bright flash (terrifying)
 
 **pro tips:**
@@ -250,7 +249,6 @@ python video_visualizer.py --file video.mp4 --no-display
 - `dominant_color` mode is great for animated content (vibrant scenes)
 - use `--audio-brightness` with music videos for double sync (colors + beats)
 - `--color-smoothing 0.7` prevents seizure-inducing color flashes
-- film this setup and watch the LinkedIn engagement go CRAZY
 
 **requirements:**
 

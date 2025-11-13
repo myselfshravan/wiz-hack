@@ -2,7 +2,13 @@
 
 so basically i got bored and decided to hack and dive into my Philips Wiz lights instead of using their app like a normal person.
 
-**the problem:** the official Wiz app is... fine? but it's missing stuff. can't integrate with my own tools, and honestly i just wanted to explore this
+## 🎥 See it in action
+
+[![First Attempt of wiz-hack](https://img.youtube.com/vi/CcxFfctZNAY/0.jpg)](https://youtube.com/shorts/CcxFfctZNAY)
+
+_See how everything started!_
+
+**the problem:** the official Philipse Wiz app is... fine? but it's missing stuff. can't integrate with my own tools, and honestly i just wanted to explore this
 
 **the solution:** turns out these Rs.500 bulbs just accept UDP packets on port 38899. no auth or protocols. sending raw JSON over UDP.
 
@@ -52,6 +58,16 @@ python api_server.py
 ## audio & music visualizer modes (the fun part)
 
 okay this is where it gets insane. your lights react to music in real-time.
+
+### 🎵 Watch the demos
+
+**Audio Visualizer Modes:**
+
+[![Audio visualizer modes](https://img.youtube.com/vi/8ZchxccZnJY/0.jpg)](https://youtube.com/shorts/8ZchxccZnJY)
+
+**Music Visualizer Modes:**
+
+[![Music visualizer modes](https://img.youtube.com/vi/cZFExx4SUEY/0.jpg)](https://youtube.com/shorts/cZFExx4SUEY)
 
 ### Two modes available:
 
@@ -188,6 +204,16 @@ okay so audio was cool, but what if your lights sync to VIDEOS? like actual movi
 
 **DIY Ambilight but better** - Philips charges 12k-15k for this. I just reverse-engineered it.
 
+### 📺 Watch the Ambilight effect
+
+**Video Visualizer Demo 1:**
+
+[![Video visualizer 1 (Ambilight)](https://img.youtube.com/vi/HyHk9IEwfuY/0.jpg)](https://youtu.be/HyHk9IEwfuY)
+
+**Video Visualizer Demo 2:**
+
+[![Video visualizer 2 (Ambilight)](https://img.youtube.com/vi/UsdBmwwvNWU/0.jpg)](https://youtu.be/UsdBmwwvNWU)
+
 **basic usage:**
 
 ```bash
@@ -264,9 +290,20 @@ okay so we made lights dance to audio and video. now they react to **THE STOCK M
 
 **the vibe:** your lights turn green when stocks go up, red when they go down. basically your room becomes a real-time trading floor indicator.
 
+### 💹 Watch it react to real stocks
+
+[![Groww Stocks visualizer (trading apis)](https://img.youtube.com/vi/VG0hvrKKMCQ/0.jpg)](https://youtu.be/VG0hvrKKMCQ)
+
+### 📊 The comparison
+
+| ![Stock market visualization setup](https://cdn.hashnode.com/res/hashnode/image/upload/v1763052683721/4f82b289-1646-4bcd-aa82-8764ec78edff.jpeg) | ![Live stock price sync](https://cdn.hashnode.com/res/hashnode/image/upload/v1763052840696/3365bc22-214d-4a88-a901-1f5d1758d91f.jpeg) |
+| :----------------------------------------------------------------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------------------------------------------------------: |
+|                                                               **Setup in action**                                                                |                                                          **Live price sync**                                                          |
+
 ### two modes available:
 
 #### 1. Real-time Mode (`stock_visualizer.py`)
+
 Monitors live stock prices during market hours:
 
 ```bash
@@ -274,12 +311,14 @@ python stock_visualizer.py
 ```
 
 **best for:**
+
 - day trading (your room literally shows if you're winning or losing)
 - market hours monitoring (9:15 AM - 3:30 PM IST)
 - flex on your friends during market hours
 - knowing stock performance without checking your phone
 
 #### 2. Historical Replay Mode (`stock_replay.py`)
+
 Replays historical stock data with smooth transitions - **works anytime!**
 
 ```bash
@@ -287,6 +326,7 @@ python stock_replay.py
 ```
 
 **best for:**
+
 - testing outside market hours
 - analyzing past price movements with visual feedback
 - making sick demo videos
@@ -364,6 +404,7 @@ pip install growwapi python-dotenv
 **find stock tokens in:** `data/instrument.csv` (provided in repo)
 
 add to your `.env` file:
+
 ```
 GROWW_AUTH_TOKEN=your_auth_token_here
 ```
